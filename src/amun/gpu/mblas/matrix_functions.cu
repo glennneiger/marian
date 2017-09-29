@@ -386,10 +386,10 @@ Matrix& Prod(cublasHandle_t handle, Matrix& C, const Matrix& A, const Matrix& B,
   //cerr << "FLOAT Prod" << endl;
   assert((A.dim(2) == A.dim(3) == 1) || (B.dim(2) == B.dim(3) == 1));
 
-  Matrix::value_type alpha = 1.0;
-  Matrix::value_type beta = 0.0;
-  //Matrix::value_type alpha = float2half_rn(1.0);
-  //Matrix::value_type beta = float2half_rn(0.0);
+  //Matrix::value_type alpha = 1.0;
+  //Matrix::value_type beta = 0.0;
+  Matrix::value_type alpha = float2half_rn(1.0);
+  Matrix::value_type beta = float2half_rn(0.0);
 
   size_t m = A.dim(0) * A.dim(2) * A.dim(3);
   size_t k = A.dim(1);
@@ -436,17 +436,7 @@ Matrix& Prod(cublasHandle_t handle, Matrix& C, const Matrix& A, const Matrix& B,
   cublasOperation_t opA = transA ? CUBLAS_OP_T : CUBLAS_OP_N;
   cublasOperation_t opB = transB ? CUBLAS_OP_T : CUBLAS_OP_N;
 
-  /*
-   cublasStatus_t cublasSgemm(cublasHandle_t handle,
-                           cublasOperation_t transa, cublasOperation_t transb,
-                           int m, int n, int k,
-                           const float           *alpha,
-                           const float           *A, int lda,
-                           const float           *B, int ldb,
-                           const float           *beta,
-                           float           *C, int ldc)
-   */
-  cublasSgemm(handle, opB, opA,
+  cublasHgemm(handle, opB, opA,
               n, m, k,
               &alpha,
               B.data(), ldb,
