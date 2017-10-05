@@ -40,7 +40,6 @@ void gpu_blas_mmul(const half2 *A, const half2 *B, half2 *C, const int m, const 
         cublasHgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha_h,
             A, lda, B, ldb, beta_h, C, ldc);
      }
-     cudaStreamSynchronize(0);
 
      // Destroy the handle
      cublasDestroy(handle);
@@ -82,14 +81,15 @@ int main() {
      cudaMalloc(&d_B,nr_rows_B * nr_cols_B * sizeof(half2));
      cudaMalloc(&d_C,nr_rows_C * nr_cols_C * sizeof(half2));
 
+     // Fill the arrays A and B on GPU with random numbers
+     GPU_fill_rand(d_A, nr_rows_A, nr_cols_A);
+     GPU_fill_rand(d_B, nr_rows_B, nr_cols_B);
+     
      for (size_t i = 0; i < 10000; ++i) {
-		 // Fill the arrays A and B on GPU with random numbers
-		 GPU_fill_rand(d_A, nr_rows_A, nr_cols_A);
-		 GPU_fill_rand(d_B, nr_rows_B, nr_cols_B);
-
-		 // Multiply A and B on GPU
-		 //gpu_blas_mmul(d_A, d_B, d_C, nr_rows_A, nr_cols_A, nr_cols_B);
+	 // Multiply A and B on GPU
+	 //gpu_blas_mmul(d_A, d_B, d_C, nr_rows_A, nr_cols_A, nr_cols_B);
      }
+     cudaStreamSynchronize(0);
 
      // Copy (and print) the result on host memory
 
@@ -119,7 +119,7 @@ int main() {
      GPU_fill_rand(d_A, nr_rows_A, nr_cols_A);
      GPU_fill_rand(d_B, nr_rows_B, nr_cols_B);
 
-     for (size_t i = 0; i < 10000; ++i) {
+     for (size_t i = 0; i < 10000000; ++i) {
        gPlusTanh<<<blocks, threads>>>(d_A, d_B, d_C, size);
      }
      cudaStreamSynchronize(0);
