@@ -7,7 +7,7 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
-void GPU_fill_rand(half2 *A, int nr_rows_A, int nr_cols_A) {
+void GPU_fill_rand(half *A, int nr_rows_A, int nr_cols_A) {
      // Create a pseudo-random number generator
      curandGenerator_t prng;
      curandCreateGenerator(&prng, CURAND_RNG_PSEUDO_DEFAULT);
@@ -20,15 +20,15 @@ void GPU_fill_rand(half2 *A, int nr_rows_A, int nr_cols_A) {
 }
 
 /////////////////////////////////////////////////////////////////////////////
-/*
-void gpu_blas_mmul(const half2 *A, const half2 *B, half2 *C, const int m, const int k, const int n) {
+
+void gpu_blas_mmul(const half *A, const half *B, half *C, const int m, const int k, const int n) {
      int lda=m,ldb=k,ldc=m;
 
-     half2 alf_h;
-     half2 *alpha_h = &alf_h;
+     half alf_h;
+     half *alpha_h = &alf_h;
 
-     half2 bet_h;
-     half2 *beta_h = &bet_h;
+     half bet_h;
+     half *beta_h = &bet_h;
 
      // Create a handle for CUBLAS
      cublasHandle_t handle;
@@ -45,15 +45,14 @@ void gpu_blas_mmul(const half2 *A, const half2 *B, half2 *C, const int m, const 
      // Destroy the handle
      cublasDestroy(handle);
 }
-*/
+
 /////////////////////////////////////////////////////////////////////////////
 
-__global__ void gPlusTanh(const half2 *A, const half2 *B, half2 *C, size_t size)
+__global__ void gPlusTanh(const half *A, const half *B, half *C, size_t size)
 {
   int i = threadIdx.x  + blockDim.x * blockIdx.x;
   if (i < size) {
-    //half2 res = A[i] + B[i];
-    half2 res = __hadd2(A[i], B[i]);
+    half res = A[i] + B[i];
     //res = tanh(res);
     C[i] = res; 
   }
@@ -77,10 +76,10 @@ int main() {
      nr_cols_C = 85000;
 
      // Allocate 3 arrays on GPU
-     half2 *d_A, *d_B, *d_C;
-     cudaMalloc(&d_A,nr_rows_A * nr_cols_A * sizeof(half2));
-     cudaMalloc(&d_B,nr_rows_B * nr_cols_B * sizeof(half2));
-     cudaMalloc(&d_C,nr_rows_C * nr_cols_C * sizeof(half2));
+     half *d_A, *d_B, *d_C;
+     cudaMalloc(&d_A,nr_rows_A * nr_cols_A * sizeof(half));
+     cudaMalloc(&d_B,nr_rows_B * nr_cols_B * sizeof(half));
+     cudaMalloc(&d_C,nr_rows_C * nr_cols_C * sizeof(half));
 
      for (size_t i = 0; i < 1000; ++i) {
 		 // Fill the arrays A and B on GPU with random numbers
@@ -88,7 +87,7 @@ int main() {
 		 GPU_fill_rand(d_B, nr_rows_B, nr_cols_B);
 
 		 // Multiply A and B on GPU
-		 //gpu_blas_mmul(d_A, d_B, d_C, nr_rows_A, nr_cols_A, nr_cols_B);
+		 gpu_blas_mmul(d_A, d_B, d_C, nr_rows_A, nr_cols_A, nr_cols_B);
      }
 
      // Copy (and print) the result on host memory
@@ -119,7 +118,7 @@ int main() {
      GPU_fill_rand(d_A, nr_rows_A, nr_cols_A);
      GPU_fill_rand(d_B, nr_rows_B, nr_cols_B);
 
-     for (size_t i = 0; i < 10000; ++i) {
+     for (size_t i = 0; i < 1000; ++i) {
        gPlusTanh<<<blocks, threads>>>(d_A, d_B, d_C, size);
      }
      cudaStreamSynchronize(0);
@@ -132,10 +131,6 @@ int main() {
      end2 = std::chrono::system_clock::now();
      std::chrono::duration<double> elapsed2 = end2 - end1;
      std::cout << "element-wise tanh(x+y): " << elapsed2.count() << "s\n";
-
-    std::cerr << "float=" << sizeof(float) << std::endl;
-    std::cerr << "half=" << sizeof(half) << std::endl;
-    std::cerr << "half2=" << sizeof(half2) << std::endl;
 
      return 0;
  }
