@@ -50,7 +50,7 @@ __global__ void gPlusTanh(const float *A, const float *B, float *C, size_t size)
   int i = threadIdx.x  + blockDim.x * blockIdx.x;
   if (i < size) {
     float res = A[i] + B[i];
-    res = tanh(res);
+    //res = tanh(res);
     C[i] = res; 
   }
 }
@@ -59,7 +59,7 @@ __global__ void gPlusTanh(const float *A, const float *B, float *C, size_t size)
 
 int main() {
      // Allocate 3 arrays on CPU
-    std::chrono::time_point<std::chrono::system_clock> start, end;
+    std::chrono::time_point<std::chrono::system_clock> start, end1, end2;
     start = std::chrono::system_clock::now();
 
      int nr_rows_A, nr_cols_A, nr_rows_B, nr_cols_B, nr_rows_C, nr_cols_C;
@@ -78,7 +78,7 @@ int main() {
      cudaMalloc(&d_B,nr_rows_B * nr_cols_B * sizeof(float));
      cudaMalloc(&d_C,nr_rows_C * nr_cols_C * sizeof(float));
 
-     for (size_t i = 0; i < 10000; ++i) {
+     for (size_t i = 0; i < 1000; ++i) {
 		 // Fill the arrays A and B on GPU with random numbers
 		 GPU_fill_rand(d_A, nr_rows_A, nr_cols_A);
 		 GPU_fill_rand(d_B, nr_rows_B, nr_cols_B);
@@ -87,20 +87,45 @@ int main() {
 		 gpu_blas_mmul(d_A, d_B, d_C, nr_rows_A, nr_cols_A, nr_cols_B);
      }
 
-     // 
+     //Free GPU memory
+     cudaFree(d_A);
+     cudaFree(d_B);
+     cudaFree(d_C);  
+
+     end1 = std::chrono::system_clock::now();
+     std::chrono::duration<double> elapsed1 = end1 - start;
+     std::cout << "multiplication: " << elapsed1.count() << "s\n";
+
+     // element-wise tanh(x+y)
+     nr_rows_A = 520;
+     nr_cols_A = 85000;
+     nr_rows_B = 520;
+     nr_cols_B = 85000;
+     int size = nr_rows_A * nr_cols_A;
+
+     cudaMalloc(&d_A,nr_rows_A * nr_cols_A * sizeof(float));
+     cudaMalloc(&d_B,nr_rows_B * nr_cols_B * sizeof(float));
+     cudaMalloc(&d_C,nr_rows_C * nr_cols_C * sizeof(float));
+
+     size_t threads = 512;
+     size_t blocks =  (size / threads) + ((size % threads == 0) ?  0 : 1);
+
+     GPU_fill_rand(d_A, nr_rows_A, nr_cols_A);
+     GPU_fill_rand(d_B, nr_rows_B, nr_cols_B);
+
+     for (size_t i = 0; i < 1000; ++i) {
+       gPlusTanh<<<blocks, threads>>>(d_A, d_B, d_C, size);
+     }
+     cudaStreamSynchronize(0);
 
      //Free GPU memory
      cudaFree(d_A);
      cudaFree(d_B);
      cudaFree(d_C);  
 
-     std::cerr << "COS\n";
-     end = std::chrono::system_clock::now();
-
-     std::chrono::duration<double> elapsed_seconds = end-start;
-     std::time_t end_time = std::chrono::system_clock::to_time_t(end);
-     std::cout << "finished computation at " << std::ctime(&end_time)
-               << "elapsed time: " << elapsed_seconds.count() << "s\n";
+     end2 = std::chrono::system_clock::now();
+     std::chrono::duration<double> elapsed2 = end2 - end1;
+     std::cout << "element-wise tanh(x+y): " << elapsed2.count() << "s\n";
 
      return 0;
  }
