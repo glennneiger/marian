@@ -5,6 +5,8 @@
 #include <cuda_fp16.h>
 #include <chrono>
 
+/////////////////////////////////////////////////////////////////////////////
+
 void GPU_fill_rand(float *A, int nr_rows_A, int nr_cols_A) {
      // Create a pseudo-random number generator
      curandGenerator_t prng;
@@ -16,6 +18,8 @@ void GPU_fill_rand(float *A, int nr_rows_A, int nr_cols_A) {
      // Fill the array with random numbers on the device
      /* curandGenerateUniform(prng, A, nr_rows_A * nr_cols_A); */
 }
+
+/////////////////////////////////////////////////////////////////////////////
 
 void gpu_blas_mmul(const float *A, const float *B, float *C, const int m, const int k, const int n) {
      int lda=m,ldb=k,ldc=m;
@@ -38,6 +42,20 @@ void gpu_blas_mmul(const float *A, const float *B, float *C, const int m, const 
      // Destroy the handle
      cublasDestroy(handle);
 }
+
+/////////////////////////////////////////////////////////////////////////////
+
+__global__ void gPlusTanh(const float *A, const float *B, float *C, size_t size)
+{
+  int i = threadIdx.x  + blockDim.x * blockIdx.x;
+  if (i < size) {
+    float res = A[i] + B[i];
+    res = tanh(res);
+    C[i] = res; 
+  }
+}
+
+/////////////////////////////////////////////////////////////////////////////
 
 int main() {
      // Allocate 3 arrays on CPU
@@ -69,7 +87,7 @@ int main() {
 		 gpu_blas_mmul(d_A, d_B, d_C, nr_rows_A, nr_cols_A, nr_cols_B);
      }
 
-     // Copy (and print) the result on host memory
+     // 
 
      //Free GPU memory
      cudaFree(d_A);
