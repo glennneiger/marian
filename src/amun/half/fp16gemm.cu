@@ -50,12 +50,12 @@ int main() {
      int nr_rows_A, nr_cols_A, nr_rows_B, nr_cols_B, nr_rows_C, nr_cols_C;
 
      // for simplicity we are going to use square arrays
-     nr_rows_A = 12;
-     nr_cols_A = 500;
-     nr_rows_B = 500;
-     nr_cols_B = 90000;
-     nr_rows_C = 12;
-     nr_cols_C = 90000;
+     nr_rows_A = 512;
+     nr_cols_A = 512;
+     nr_rows_B = 512;
+     nr_cols_B = 85000;
+     nr_rows_C = 520;
+     nr_cols_C = 85000;
 
      // Allocate 3 arrays on GPU
      half *d_A, *d_B, *d_C;
