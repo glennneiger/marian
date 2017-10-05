@@ -78,7 +78,7 @@ int main() {
      cudaMalloc(&d_B,nr_rows_B * nr_cols_B * sizeof(float));
      cudaMalloc(&d_C,nr_rows_C * nr_cols_C * sizeof(float));
 
-     for (size_t i = 0; i < 1000; ++i) {
+     for (size_t i = 0; i < 10000; ++i) {
 		 // Fill the arrays A and B on GPU with random numbers
 		 GPU_fill_rand(d_A, nr_rows_A, nr_cols_A);
 		 GPU_fill_rand(d_B, nr_rows_B, nr_cols_B);
@@ -113,7 +113,7 @@ int main() {
      GPU_fill_rand(d_A, nr_rows_A, nr_cols_A);
      GPU_fill_rand(d_B, nr_rows_B, nr_cols_B);
 
-     for (size_t i = 0; i < 1000; ++i) {
+     for (size_t i = 0; i < 10000; ++i) {
        gPlusTanh<<<blocks, threads>>>(d_A, d_B, d_C, size);
      }
      cudaStreamSynchronize(0);
