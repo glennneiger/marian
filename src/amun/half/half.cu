@@ -50,7 +50,9 @@ void gpu_blas_mmul(const half *A, const half *B, half *C, const int m, const int
 __device__
 half htanh(const half x)
 {
-  half ret = ((half)1.0f - hexp((half)-2.0f * x)) / ((half)1.0f + hexp((half)-2.0f * x));
+  half one = __float2half(1.0f);
+  half t1 = hexp(__float2half(2.0f) * x);
+  half ret = (one - t1) / (one + t1);
   //half ret = (hexp((half)2.0f * x) - (half)1.0f) / (hexp((half)2.0f * x) + (half)1.0f);
   //half ret = (hexp(x) - hexp(-x)) / (hexp(x) + hexp(-x));
   //half ret = tanhf(x);
@@ -73,6 +75,8 @@ __global__ void gPlusTanh(const half *A, const half *B, half *C, size_t size)
 /////////////////////////////////////////////////////////////////////////////
 
 int main() {
+    std::cout << "HALF\n";
+
     std::chrono::time_point<std::chrono::system_clock> start, end1, end2;
     start = std::chrono::system_clock::now();
 
@@ -99,7 +103,7 @@ int main() {
 
      for (size_t i = 0; i < 10000; ++i) {
 	 // Multiply A and B on GPU
-	 gpu_blas_mmul(d_A, d_B, d_C, nr_rows_A, nr_cols_A, nr_cols_B);
+	 //gpu_blas_mmul(d_A, d_B, d_C, nr_rows_A, nr_cols_A, nr_cols_B);
      }
      cudaStreamSynchronize(0);
 
@@ -131,7 +135,7 @@ int main() {
      GPU_fill_rand(d_A, nr_rows_A, nr_cols_A);
      GPU_fill_rand(d_B, nr_rows_B, nr_cols_B);
 
-     for (size_t i = 0; i < 10000000; ++i) {
+     for (size_t i = 0; i < 10000; ++i) {
        gPlusTanh<<<blocks, threads>>>(d_A, d_B, d_C, size);
      }
      cudaStreamSynchronize(0);

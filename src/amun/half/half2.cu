@@ -51,14 +51,17 @@ void gpu_blas_mmul(const half2 *A, const half2 *B, half2 *C, const int m, const 
 __device__
 half2 h2tanh(const half2 x)
 {
-  //half2 ret = ((half2)1.0f - hexp((half2)-2.0f * x)) / ((half2)1.0f + hexp((half2)-2.0f * x));
-  //half ret = (hexp((half)2.0f * x) - (half)1.0f) / (hexp((half)2.0f * x) + (half)1.0f);
-  half2 t1 = __hsub2(h2exp(x), h2exp(__hneg2(x)));
-  half2 t2 = __hadd2(h2exp(x), h2exp(__hneg2(x)));
-  half2 t3 = h2rcp(t2);
+  //half2 t1 = __hsub2(h2exp(x), h2exp(__hneg2(x)));
+  //half2 t2 = __hadd2(h2exp(x), h2exp(__hneg2(x)));
+  //half2 t3 = h2rcp(t2);
+  //half2 ret = __hmul2(t1, t3);
+
+  half2 one = __float2half2_rn(1.0f);
+  half2 t1 = h2exp(__hmul2(__float2half2_rn(2.0f), x));
+  half2 t2 = __hsub2(one, t1);
+  half2 t3 = __hadd2(one, t1);
+  t3 = h2rcp(t3);
   half2 ret = __hmul2(t1, t3);
-  //__hadd2(h2exp(x), h2exp(__hneg2(x)));
-  //half ret = tanhf(x);
 
   return ret;
 }
@@ -79,6 +82,8 @@ __global__ void gPlusTanh(const half2 *A, const half2 *B, half2 *C, size_t size)
 /////////////////////////////////////////////////////////////////////////////
 
 int main() {
+    std::cout << "HALF2\n";
+
     std::chrono::time_point<std::chrono::system_clock> start, end1, end2;
     start = std::chrono::system_clock::now();
 
@@ -137,7 +142,7 @@ int main() {
      GPU_fill_rand(d_A, nr_rows_A, nr_cols_A);
      GPU_fill_rand(d_B, nr_rows_B, nr_cols_B);
 
-     for (size_t i = 0; i < 10000000; ++i) {
+     for (size_t i = 0; i < 10000; ++i) {
        gPlusTanh<<<blocks, threads>>>(d_A, d_B, d_C, size);
      }
      cudaStreamSynchronize(0);
