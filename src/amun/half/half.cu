@@ -132,10 +132,10 @@ int main() {
      size_t threads = 512;
      size_t blocks =  (size / threads) + ((size % threads == 0) ?  0 : 1);
 
-     GPU_fill_rand(d_A, nr_rows_A, nr_cols_A);
-     GPU_fill_rand(d_B, nr_rows_B, nr_cols_B);
 
      for (size_t i = 0; i < 10000; ++i) {
+       GPU_fill_rand(d_A, nr_rows_A, nr_cols_A);
+       GPU_fill_rand(d_B, nr_rows_B, nr_cols_B);
        gPlusTanh<<<blocks, threads>>>(d_A, d_B, d_C, size);
      }
      cudaStreamSynchronize(0);
