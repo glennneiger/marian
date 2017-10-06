@@ -49,7 +49,7 @@ __global__ void gPlusTanh(const float *A, const float *B, float *C, size_t size)
   int i = threadIdx.x  + blockDim.x * blockIdx.x;
   if (i < size) {
     float res = A[i] + B[i];
-    //res = tanh(res);
+    res = tanh(res);
     C[i] = res; 
   }
 }

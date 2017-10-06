@@ -45,6 +45,24 @@ void gpu_blas_mmul(const half2 *A, const half2 *B, half2 *C, const int m, const 
      cublasDestroy(handle);
 }
 */
+
+/////////////////////////////////////////////////////////////////////////////
+
+__device__
+half2 h2tanh(const half2 x)
+{
+  //half2 ret = ((half2)1.0f - hexp((half2)-2.0f * x)) / ((half2)1.0f + hexp((half2)-2.0f * x));
+  //half ret = (hexp((half)2.0f * x) - (half)1.0f) / (hexp((half)2.0f * x) + (half)1.0f);
+  half2 t1 = __hsub2(h2exp(x), h2exp(__hneg2(x)));
+  half2 t2 = __hadd2(h2exp(x), h2exp(__hneg2(x)));
+  half2 t3 = h2rcp(t2);
+  half2 ret = __hmul2(t1, t3);
+  //__hadd2(h2exp(x), h2exp(__hneg2(x)));
+  //half ret = tanhf(x);
+
+  return ret;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 __global__ void gPlusTanh(const half2 *A, const half2 *B, half2 *C, size_t size)
@@ -53,7 +71,7 @@ __global__ void gPlusTanh(const half2 *A, const half2 *B, half2 *C, size_t size)
   if (i < size) {
     //half2 res = A[i] + B[i];
     half2 res = __hadd2(A[i], B[i]);
-    //res = tanh(res);
+    res = h2tanh(res);
     C[i] = res; 
   }
 }
