@@ -44,12 +44,27 @@ void gpu_blas_mmul(const float *A, const float *B, float *C, const int m, const 
 
 /////////////////////////////////////////////////////////////////////////////
 
+__device__
+float mytanh(const float x)
+{
+  float one = 1.0f;
+  float t1 = exp(2.0f * x);
+  float ret = (one - t1) / (one + t1);
+  //half ret = (hexp((half)2.0f * x) - (half)1.0f) / (hexp((half)2.0f * x) + (half)1.0f);
+  //half ret = (hexp(x) - hexp(-x)) / (hexp(x) + hexp(-x));
+  //half ret = tanhf(x);
+
+  return ret;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+
 __global__ void gPlusTanh(const float *A, const float *B, float *C, size_t size)
 {
   int i = threadIdx.x  + blockDim.x * blockIdx.x;
   if (i < size) {
     float res = A[i] + B[i];
-    res = tanh(res);
+    res = mytanh(res);
     C[i] = res; 
   }
 }
