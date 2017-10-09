@@ -78,6 +78,8 @@ void NthElement::getNBestList(mblas::Matrix &probs,
                               const HostVector<uint>& batchFirstElementIdxs,
                               const HostVector<uint>& cummulatedBeamSizes)
 {
+  BEGIN_TIMER("getNBestList ex kernels");
+
   const uint vocabSize = probs.dim(1);
   const uint numBlocks = uint(maxBeamSize_ * vocabSize / (2 * BLOCK_SIZE)) + uint(maxBeamSize_ * vocabSize % (2 * BLOCK_SIZE) != 0);
   const uint numBatches = batchFirstElementIdxs.size() - 1;
@@ -104,9 +106,14 @@ void NthElement::getNBestList(mblas::Matrix &probs,
   mblas::MatrixWrapper<NthOut> resWrap(d_res, false);
   mblas::MatrixWrapper<uint> cumBeamSizesWrap(d_cumBeamSizes);
 
+  PAUSE_TIMER("getNBestList ex kernels");
+
+  BEGIN_TIMER("gMaxElement");
   gMaxElement<<<numBlocks, BLOCK_SIZE, BLOCK_SIZE * sizeof(float), mblas::CudaStreamHandler::GetStream()>>>
     (outWrap, probsWrap, batchPositionWrap, numBatches);
+  PAUSE_TIMER("gMaxElement");
 
+  BEGIN_TIMER("gMaxElementUpdate");
   gMaxElementUpdate<<<numBatches, BLOCK_SIZE, BLOCK_SIZE * sizeof(float), mblas::CudaStreamHandler::GetStream()>>>
     (outWrap,
      probsWrap,
@@ -114,6 +121,7 @@ void NthElement::getNBestList(mblas::Matrix &probs,
      batchPositionWrap,
      cumBeamSizesWrap,
      numBlocks);
+  PAUSE_TIMER("gMaxElementUpdate");
 
   /*
   cerr << "numBlocks=" << numBlocks << endl;
