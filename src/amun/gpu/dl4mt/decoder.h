@@ -312,9 +312,11 @@ class Decoder {
           BroadcastVec(_1 + _2, Probs, *b4);
           //PAUSE_TIMER("GetProbs.BroadcastVec");
 
+          //std::cerr << "1Probs=" << Probs.Debug(1) << std::endl;
           BEGIN_TIMER("GetProbs.LogSoftMax");
           mblas::LogSoftmax(Probs);
           PAUSE_TIMER("GetProbs.LogSoftMax");
+          //std::cerr << "2Probs=" << Probs.Debug(1) << std::endl;
         }
 
         void Filter(const std::vector<size_t>& ids) {

@@ -64,6 +64,7 @@ void  BestHyps::CalcBeam(
   using namespace mblas;
 
   mblas::Matrix& Probs = static_cast<mblas::Matrix&>(scorers[0]->GetProbs());
+  //std::cerr << "4Probs=" << Probs.Debug(1) << std::endl;
 
   HostVector<float> vCosts;
   for (auto& h : prevHyps) {
@@ -79,16 +80,23 @@ void  BestHyps::CalcBeam(
 
   const bool isFirst = (vCosts[0] == 0.0f) ? true : false;
 
+  //std::cerr << "Costs=" << Debug(Costs, 1) << std::endl;
+  BEGIN_TIMER("CalcBeam.BroadcastVecColumn");
   BroadcastVecColumn(weights_.at(scorers[0]->GetName()) * _1 + _2, Probs, Costs);
+  PAUSE_TIMER("CalcBeam.BroadcastVecColumn");
+  std::cerr << "1Probs=" << Probs.Debug(1) << std::endl;
 
   for (size_t i = 1; i < scorers.size(); ++i) {
     mblas::Matrix &currProbs = static_cast<mblas::Matrix&>(scorers[i]->GetProbs());
 
     Element(_1 + weights_.at(scorers[i]->GetName()) * _2, Probs, currProbs);
   }
+  std::cerr << "2Probs=" << Probs.Debug(1) << std::endl;
 
   if (forbidUNK_) {
+    std::cerr << "2.1Probs=" << Probs.Debug(1) << std::endl;
     DisAllowUNK(Probs);
+    std::cerr << "2.2Probs=" << Probs.Debug(1) << std::endl;
   }
 
   size_t beamSizeSum = std::accumulate(beamSizes.begin(), beamSizes.end(), 0);
@@ -96,6 +104,7 @@ void  BestHyps::CalcBeam(
   std::vector<float> bestCosts;
   std::vector<unsigned> bestKeys;
 
+  std::cerr << "3Probs=" << Probs.Debug(1) << std::endl;
   FindBests(beamSizes, Probs, bestCosts, bestKeys, isFirst);
 
   std::vector<HostVector<float>> breakDowns;
