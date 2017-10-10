@@ -529,7 +529,7 @@ Matrix& Softmax(Matrix& Out, const DeviceVector<uint>& batchIds, const mblas::IM
   return Out;
 }
 
-__global__ void gLogSoftMax(MatrixWrapper<float> out, uint shareSize)
+__global__ void gLogSoftMax(MatrixWrapper<float> out, MatrixWrapper<float> topWrap, uint shareSize)
 {
   extern __shared__ float _share[];
 
@@ -566,7 +566,8 @@ __global__ void gLogSoftMax(MatrixWrapper<float> out, uint shareSize)
     }
     __syncthreads();
     float max = _max[0];
-    __syncthreads();
+    topWrap[rowIdx] = max;
+     __syncthreads();
 
     //float* _sum = _share;// + blockDim.x;
     MatrixWrapper<float> _sum(_share, shareSize);
@@ -613,12 +614,21 @@ Matrix& LogSoftmax(Matrix& Out)
 {
   MatrixWrapper<float> outWrap(Out);
 
+  Matrix top(Out.dim(0), 1, 1, 1);
+  MatrixWrapper<float> topWrap(top);
+
   int blocks = std::min(MAX_BLOCKS, (int)Out.dim(0));
   int threads = std::min(MAX_THREADS, (int)Out.dim(1));
   int shared = sizeof(float) * threads;
 
+  cerr << "Out=" << Out.Debug(0) << endl;
+  cerr << "top=" << top.Debug(0) << endl;
+  cerr << "blocks=" << blocks << endl;
+  cerr << "threads=" << threads << endl;
+  cerr << "shared=" << shared << endl;
+
   gLogSoftMax<<<blocks, threads, shared, CudaStreamHandler::GetStream()>>>
-    (Out, threads);
+    (Out, topWrap, threads);
 
   return Out;
 }
