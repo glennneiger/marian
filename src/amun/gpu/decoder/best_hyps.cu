@@ -81,10 +81,11 @@ void  BestHyps::CalcBeam(
   const bool isFirst = (vCosts[0] == 0.0f) ? true : false;
 
   //std::cerr << "Costs=" << Debug(Costs, 1) << std::endl;
+  //std::cerr << "1Probs=" << Probs.Debug(1) << std::endl;
   BEGIN_TIMER("CalcBeam.BroadcastVecColumn");
   BroadcastVecColumn(weights_.at(scorers[0]->GetName()) * _1 + _2, Probs, Costs);
   PAUSE_TIMER("CalcBeam.BroadcastVecColumn");
-  //std::cerr << "1Probs=" << Probs.Debug(1) << std::endl;
+  //std::cerr << "2Probs=" << Probs.Debug(1) << std::endl;
 
   for (size_t i = 1; i < scorers.size(); ++i) {
     mblas::Matrix &currProbs = static_cast<mblas::Matrix&>(scorers[i]->GetProbs());

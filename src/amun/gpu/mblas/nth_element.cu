@@ -151,7 +151,9 @@ void NthElement::GetPairs(uint number,
                     std::vector<float>& outValues)
 {
   mblas::copy(d_res.data(), d_res.size(), thrust::raw_pointer_cast(h_res.data()), cudaMemcpyDeviceToHost);
+  BEGIN_TIMER("cudaStreamSynchronize");
   HANDLE_ERROR( cudaStreamSynchronize(mblas::CudaStreamHandler::GetStream()) );
+  PAUSE_TIMER("cudaStreamSynchronize");
 
   for (uint i = 0; i < number; ++i) {
     outKeys.push_back(h_res[i].ind);
@@ -172,7 +174,10 @@ void NthElement::getValueByKey(std::vector<float>& out, const mblas::Matrix &d_i
 
   HANDLE_ERROR( cudaMemcpyAsync(out.data(), d_breakdown.data(), h_res.size() * sizeof(float),
                                 cudaMemcpyDeviceToHost, mblas::CudaStreamHandler::GetStream()) );
+
+  BEGIN_TIMER("cudaStreamSynchronize2");
   HANDLE_ERROR( cudaStreamSynchronize(mblas::CudaStreamHandler::GetStream()));
+  PAUSE_TIMER("cudaStreamSynchronize2");
 }
 
 }  // namespace GPU
