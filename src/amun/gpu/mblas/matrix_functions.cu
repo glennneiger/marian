@@ -1,5 +1,6 @@
-#include "gpu/mblas/matrix_functions.h"
-#include "gpu/mblas/handles.h"
+#include "matrix_functions.h"
+#include "handles.h"
+#include "nth_element_kernels.h"
 
 using namespace std;
 
@@ -529,9 +530,9 @@ Matrix& Softmax(Matrix& Out, const DeviceVector<uint>& batchIds, const mblas::IM
   return Out;
 }
 
-__global__ void gLogSoftMax(MatrixWrapper<float> out, MatrixWrapper<float> topWrap, uint shareSize)
+__global__ void gLogSoftMax(MatrixWrapper<float> out, MatrixWrapper<NthOut> topWrap, uint shareSize)
 {
-  extern __shared__ float _share[];
+  extern __shared__ NthOut _shareNthOut[];
 
   size_t rows = out.dim(0);
   size_t cols = out.dim(1);
@@ -540,15 +541,15 @@ __global__ void gLogSoftMax(MatrixWrapper<float> out, MatrixWrapper<float> topWr
 
   while (rowIdx < rows) {
     //float* _max = _share;
-    MatrixWrapper<float> _max(_share, shareSize);
+    MatrixWrapper<NthOut> _max(_shareNthOut, shareSize);
 
-    _max[threadIdx.x] = out(rowIdx, threadIdx.x, 0, 0);
+    _max[threadIdx.x].score = out(rowIdx, threadIdx.x, 0, 0);
     for (int tid = 0; tid < cols; tid += blockDim.x) {
       int id = tid + threadIdx.x;
       if (id < cols) {
         const float &val = out(rowIdx, id, 0, 0);
-        if (val > _max[threadIdx.x]) {
-          _max[threadIdx.x] = val;
+        if (val > _max[threadIdx.x].score) {
+          _max[threadIdx.x] = NthOut((uint) id, val);
         }
       }
     }
@@ -559,27 +560,29 @@ __global__ void gLogSoftMax(MatrixWrapper<float> out, MatrixWrapper<float> topWr
 
       int skip = (len + 1) >> 1;
       if (threadIdx.x < (len >> 1)) {
-        if(_max[threadIdx.x + skip] > _max[threadIdx.x])
+        if(_max[threadIdx.x + skip].score > _max[threadIdx.x].score)
           _max[threadIdx.x] = _max[threadIdx.x + skip];
       }
       len = (len + 1) >> 1;
     }
+
     __syncthreads();
-    float max = _max[0];
+    NthOut max(_max[0].ind, _max[0].score);
+    __syncthreads();
+
     topWrap[rowIdx] = max;
-     __syncthreads();
 
     //float* _sum = _share;// + blockDim.x;
-    MatrixWrapper<float> _sum(_share, shareSize);
+    MatrixWrapper<NthOut> _sum(_shareNthOut, shareSize);
 
-    _sum[threadIdx.x] = 0.0f;
+    _sum[threadIdx.x].score = 0.0f;
     for (int tid = 0; tid < cols; tid += blockDim.x) {
       int id = tid + threadIdx.x;
       if (id < cols) {
         //row[id] = exp(row[id] - max);
         float &val = out(rowIdx, id, 0, 0);
-        val = __expf(val - max);
-        _sum[threadIdx.x] += val;
+        val = __expf(val - max.score);
+        _sum[threadIdx.x].score += val;
       }
     }
 
@@ -589,7 +592,7 @@ __global__ void gLogSoftMax(MatrixWrapper<float> out, MatrixWrapper<float> topWr
 
       int skip = (len + 1) >> 1;
       if (threadIdx.x < (len >> 1)) {
-        _sum[threadIdx.x] += _sum[threadIdx.x + skip];
+        _sum[threadIdx.x].score += _sum[threadIdx.x + skip].score;
       }
       len = (len + 1) >> 1;
     }
@@ -601,7 +604,7 @@ __global__ void gLogSoftMax(MatrixWrapper<float> out, MatrixWrapper<float> topWr
       if (id < cols) {
         //row[id] = log(row[id]/_sum[0]);
         float &val = out(rowIdx, id, 0, 0);
-        val = __logf(val /_sum[0]);
+        val = __logf(val /_sum[0].score);
       }
     }
     __syncthreads();
@@ -614,12 +617,12 @@ Matrix& LogSoftmax(Matrix& Out)
 {
   MatrixWrapper<float> outWrap(Out);
 
-  Matrix top(Out.dim(0), 1, 1, 1);
-  MatrixWrapper<float> topWrap(top);
+  TMatrix<NthOut> top(Out.dim(0), 1, 1, 1);
+  MatrixWrapper<NthOut> topWrap(top);
 
   int blocks = std::min(MAX_BLOCKS, (int)Out.dim(0));
   int threads = std::min(MAX_THREADS, (int)Out.dim(1));
-  int shared = sizeof(float) * threads;
+  int shared = sizeof(NthOut) * threads;
 
   cerr << "Out=" << Out.Debug(0) << endl;
   cerr << "top=" << top.Debug(0) << endl;

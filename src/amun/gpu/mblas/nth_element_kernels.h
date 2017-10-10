@@ -15,10 +15,13 @@ struct NthOut
   NthOut(uint init)
   :ind(init)
   ,score(init)
-  {}
+  {
+    // only to be used to init variable in matrix.h gSum
+    assert(init == 0);
+  }
 
   __device__ __host__
-  NthOut(uint &vInd, float vScore)
+  NthOut(uint vInd, float vScore)
   :ind(vInd)
   ,score(vScore)
   {}
