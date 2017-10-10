@@ -1,5 +1,6 @@
 #pragma once
 
+#include "gpu/mblas/nth_element_kernels.h"
 #include "gpu/mblas/matrix_functions.h"
 #include "model.h"
 #include "gru.h"
@@ -312,9 +313,11 @@ class Decoder {
           BroadcastVec(_1 + _2, Probs, *b4);
           //PAUSE_TIMER("GetProbs.BroadcastVec");
 
+          mblas::TMatrix<NthOut> top(Probs.dim(0), 1, 1, 1);
+
           //std::cerr << "1Probs=" << Probs.Debug(1) << std::endl;
           BEGIN_TIMER("GetProbs.LogSoftMax");
-          mblas::LogSoftmax(Probs);
+          mblas::LogSoftmax(top, Probs);
           PAUSE_TIMER("GetProbs.LogSoftMax");
           //std::cerr << "2Probs=" << Probs.Debug(1) << std::endl;
         }

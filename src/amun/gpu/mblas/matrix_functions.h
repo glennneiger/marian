@@ -13,6 +13,7 @@
 #include "gpu/mblas/matrix.h"
 #include "gpu/mblas/matrix_wrapper.h"
 #include "gpu/mblas/handles.h"
+#include "gpu/mblas/nth_element_kernels.h"
 
 namespace amunmt {
 namespace GPU {
@@ -137,7 +138,7 @@ Matrix& Prod(Matrix& C, const Matrix& A, const Matrix& B,
 
 Matrix& Softmax(Matrix& Out, const DeviceVector<uint>& batchIds, const mblas::IMatrix &sentencesMask, size_t batchSize);
 
-Matrix& LogSoftmax(Matrix& Out);
+Matrix& LogSoftmax(TMatrix<NthOut> &top, Matrix& Out);
 
 template <class Functor>
 __global__ void gBroadcast(Functor functor,

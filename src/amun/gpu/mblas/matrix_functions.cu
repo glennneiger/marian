@@ -613,11 +613,11 @@ __global__ void gLogSoftMax(MatrixWrapper<float> out, MatrixWrapper<NthOut> topW
 }
 
 
-Matrix& LogSoftmax(Matrix& Out)
+Matrix& LogSoftmax(TMatrix<NthOut> &top, Matrix& Out)
 {
   MatrixWrapper<float> outWrap(Out);
 
-  TMatrix<NthOut> top(Out.dim(0), 1, 1, 1);
+  //TMatrix<NthOut> top(Out.dim(0), 1, 1, 1);
   MatrixWrapper<NthOut> topWrap(top);
 
   int blocks = std::min(MAX_BLOCKS, (int)Out.dim(0));
