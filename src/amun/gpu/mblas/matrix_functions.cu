@@ -530,6 +530,48 @@ Matrix& Softmax(Matrix& Out, const DeviceVector<uint>& batchIds, const mblas::IM
   return Out;
 }
 
+__global__ void gFindMax(MatrixWrapper<float> out, MatrixWrapper<NthOut> topWrap, MatrixWrapper<NthOut> maxWrap, uint shareSize)
+{
+  size_t rows = out.dim(0);
+  size_t cols = out.dim(1);
+
+  int rowIdx =  blockIdx.x;
+
+  while (rowIdx < rows) {
+    maxWrap[threadIdx.x].score = out(rowIdx, threadIdx.x, 0, 0);
+    for (int tid = 0; tid < cols; tid += blockDim.x) {
+      int id = tid + threadIdx.x;
+      if (id < cols) {
+        const float &val = out(rowIdx, id, 0, 0);
+        if (val > maxWrap[threadIdx.x].score) {
+          maxWrap[threadIdx.x] = NthOut((uint) id, val);
+        }
+      }
+    }
+
+    int len = blockDim.x;
+    while (len != 1) {
+      __syncthreads();
+
+      int skip = (len + 1) >> 1;
+      if (threadIdx.x < (len >> 1)) {
+        if(maxWrap[threadIdx.x + skip].score > maxWrap[threadIdx.x].score)
+          maxWrap[threadIdx.x] = maxWrap[threadIdx.x + skip];
+      }
+      len = (len + 1) >> 1;
+    }
+
+    __syncthreads();
+    NthOut max(maxWrap[0].ind, maxWrap[0].score);
+    __syncthreads();
+
+    topWrap[rowIdx] = max;
+
+    __syncthreads();
+    rowIdx += gridDim.x;
+  }
+}
+
 __global__ void gLogSoftMax(MatrixWrapper<float> out, MatrixWrapper<NthOut> topWrap, MatrixWrapper<NthOut> maxWrap, uint shareSize)
 {
   extern __shared__ NthOut _shareNthOut[];
@@ -624,15 +666,21 @@ Matrix& LogSoftmax(TMatrix<NthOut> &top, Matrix& Out)
   TMatrix<NthOut> max(threads, 1, 1, 1);
   MatrixWrapper<NthOut> maxWrap(max);
 
-  /*
   cerr << "Out=" << Out.Debug(0) << endl;
   cerr << "top=" << top.Debug(0) << endl;
   cerr << "blocks=" << blocks << endl;
   cerr << "threads=" << threads << endl;
   cerr << "shared=" << shared << endl;
-  */
+
+  BEGIN_TIMER("gFindMax");
+  gFindMax<<<blocks, threads, shared, CudaStreamHandler::GetStream()>>>
+    (Out, topWrap, maxWrap, threads);
+  PAUSE_TIMER("gFindMax");
+
+  BEGIN_TIMER("gLogSoftMax");
   gLogSoftMax<<<blocks, threads, shared, CudaStreamHandler::GetStream()>>>
     (Out, topWrap, maxWrap, threads);
+  PAUSE_TIMER("gLogSoftMax");
 
   return Out;
 }
