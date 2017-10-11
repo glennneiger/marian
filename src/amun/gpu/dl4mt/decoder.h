@@ -246,7 +246,8 @@ class Decoder {
           mblas::Transpose(TempB4, *w_.B4_);
         }
 
-        void GetProbs(mblas::Matrix& Probs,
+        void GetProbs(mblas::TMatrix<NthOut>& top,
+                  mblas::Matrix& Probs,
                   const mblas::Matrix& State,
                   const mblas::Matrix& Embedding,
                   const mblas::Matrix& AlignedSourceContext) {
@@ -303,6 +304,8 @@ class Decoder {
 
           //BEGIN_TIMER("GetProbs.NewSize");
           Probs.NewSize(T1_.dim(0), w4->dim(1));
+          top.NewSize(T1_.dim(0), 1, 1, 1);
+
           //PAUSE_TIMER("GetProbs.NewSize");
 
           BEGIN_TIMER("GetProbs.Prod4");
@@ -312,8 +315,6 @@ class Decoder {
           //BEGIN_TIMER("GetProbs.BroadcastVec");
           BroadcastVec(_1 + _2, Probs, *b4);
           //PAUSE_TIMER("GetProbs.BroadcastVec");
-
-          mblas::TMatrix<NthOut> top(Probs.dim(0), 1, 1, 1);
 
           //std::cerr << "1Probs=" << Probs.Debug(1) << std::endl;
           BEGIN_TIMER("GetProbs.LogSoftMax");
@@ -460,13 +461,14 @@ class Decoder {
     void GetProbs(const mblas::Matrix& State,
                   const mblas::Matrix& Embedding,
                   const mblas::Matrix& AlignedSourceContext) {
-      softmax_.GetProbs(Probs_, State, Embedding, AlignedSourceContext);
+      softmax_.GetProbs(top_, Probs_, State, Embedding, AlignedSourceContext);
     }
 
   private:
     mblas::Matrix HiddenState_;
     mblas::Matrix AlignedSourceContext_;
     mblas::Matrix Probs_;
+    mblas::TMatrix<NthOut> top_;
 
     Embeddings<Weights::DecEmbeddings> embeddings_;
     RNNHidden<Weights::DecInit, Weights::DecGRU1> rnn1_;
