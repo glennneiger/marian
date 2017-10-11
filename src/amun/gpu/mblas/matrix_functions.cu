@@ -549,7 +549,8 @@ __global__ void gFindMax(MatrixWrapper<NthOut> topWrap, const MatrixWrapper<floa
       if (id < cols) {
         const float &val = out(rowIdx, id, 0, 0);
         if (val > _max[threadIdx.x].score) {
-          _max[threadIdx.x] = NthOut(id, val);
+          uint arrInd = rowIdx * cols + id;
+          _max[threadIdx.x] = NthOut(arrInd, val);
         }
       }
     }
