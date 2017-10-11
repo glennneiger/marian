@@ -84,7 +84,7 @@ void  BestHyps::CalcBeam(
   //std::cerr << "Costs=" << Debug(Costs, 1) << std::endl;
   //std::cerr << "1Probs=" << Probs.Debug(1) << std::endl;
   BEGIN_TIMER("CalcBeam.BroadcastVecColumn");
-  BroadcastVecColumn(weights_.at(scorers[0]->GetName()) * _1 + _2, Probs, Costs);
+  BroadcastVecColumn(weights_.at(scorers[0]->GetName()) * _1 + _2, Probs, top, Costs);
   PAUSE_TIMER("CalcBeam.BroadcastVecColumn");
   //std::cerr << "2Probs=" << Probs.Debug(1) << std::endl;
 

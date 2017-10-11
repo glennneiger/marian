@@ -224,7 +224,8 @@ Matrix& Broadcast(Functor functor, Matrix& OutOrig, const Matrix& In, const Devi
 template <class Functor>
 __global__ void gBroadcastVecColumn(Functor functor,
                                     MatrixWrapper<float> outWrap,
-                                    const MatrixWrapper<float> inWrap) {
+                                    const MatrixWrapper<float> inWrap)
+{
   extern __shared__ float sdataOrig[];
 
   size_t rows  = outWrap.dim(0);
@@ -248,7 +249,16 @@ __global__ void gBroadcastVecColumn(Functor functor,
 }
 
 template <class Functor>
-Matrix& BroadcastVecColumn(Functor functor, Matrix& Out, const DeviceVector<float>& In) {
+__global__ void gBroadcastVecColumn(Functor functor,
+                                    MatrixWrapper<NthOut> topWrap,
+                                    const MatrixWrapper<float> inWrap)
+{
+
+}
+
+template <class Functor>
+Matrix& BroadcastVecColumn(Functor functor, Matrix& Out, mblas::TMatrix<NthOut> &top, const DeviceVector<float>& In)
+{
   size_t rows  = Out.dim(0);
   size_t cols = Out.dim(1);
 
@@ -260,6 +270,11 @@ Matrix& BroadcastVecColumn(Functor functor, Matrix& Out, const DeviceVector<floa
 
   gBroadcastVecColumn<<<blocks, threads, rows * sizeof(float), CudaStreamHandler::GetStream()>>>
     (functor, outWrap, inWrap);
+
+  MatrixWrapper<NthOut> topWrap(top);
+
+  gBroadcastVecColumn<<<blocks, threads, rows * sizeof(NthOut), CudaStreamHandler::GetStream()>>>
+    (functor, topWrap, inWrap);
 
   return Out;
 }
