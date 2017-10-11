@@ -19,12 +19,12 @@ void BestHyps::DisAllowUNK(mblas::Matrix& Prob) {
   SetColumn(Prob, UNK_ID, std::numeric_limits<float>::lowest());
 }
 
-void BestHyps::FindBests(const std::vector<uint>& beamSizes, mblas::Matrix& Probs,
+void BestHyps::FindBests(const std::vector<uint>& beamSizes, mblas::Matrix& Probs, mblas::TMatrix<NthOut> &top,
                std::vector<float>& outCosts,
                std::vector<unsigned>& outKeys,
                const bool isFirst)
 {
-  nthElement_.getNBestList(beamSizes, Probs, outCosts, outKeys, isFirst);
+  nthElement_.getNBestList(beamSizes, Probs, top, outCosts, outKeys, isFirst);
 }
 
 std::vector<SoftAlignmentPtr> BestHyps::GetAlignments(const std::vector<ScorerPtr>& scorers,
@@ -64,6 +64,7 @@ void  BestHyps::CalcBeam(
   using namespace mblas;
 
   mblas::Matrix& Probs = static_cast<mblas::Matrix&>(scorers[0]->GetProbs());
+  mblas::TMatrix<NthOut> &top = *static_cast<mblas::TMatrix<NthOut>*>(scorers[0]->GetTop());
   //std::cerr << "4Probs=" << Probs.Debug(1) << std::endl;
 
   HostVector<float> vCosts;
@@ -106,7 +107,7 @@ void  BestHyps::CalcBeam(
   std::vector<unsigned> bestKeys;
 
   //std::cerr << "3Probs=" << Probs.Debug(1) << std::endl;
-  FindBests(beamSizes, Probs, bestCosts, bestKeys, isFirst);
+  FindBests(beamSizes, Probs, top, bestCosts, bestKeys, isFirst);
 
   std::vector<HostVector<float>> breakDowns;
   if (returnNBestList_) {

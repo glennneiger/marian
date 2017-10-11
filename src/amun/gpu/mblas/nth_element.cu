@@ -28,9 +28,11 @@ NthElement::~NthElement()
   //cerr << "FOO2" << endl;
 }
 
-void NthElement::getNBestList(const std::vector<uint>& beamSizes, mblas::Matrix& Probs,
+void NthElement::getNBestList(const std::vector<uint>& beamSizes, mblas::Matrix& Probs, mblas::TMatrix<NthOut> &top,
                   std::vector<float>& outCosts, std::vector<uint>& outKeys,
                   const bool isFirst) {
+
+  cerr << "top=" << top.Debug(0) << endl;
   /*
   cerr << "beamSizes=" << beamSizes.size() << endl;
   cerr << Debug(beamSizes, 2) << endl;
@@ -40,6 +42,7 @@ void NthElement::getNBestList(const std::vector<uint>& beamSizes, mblas::Matrix&
   cerr << "isFirst=" << isFirst << endl;
   cerr << endl;
   */
+
   HostVector<uint> cummulatedBeamSizes(beamSizes.size() + 1);
   HostVector<uint> batchFirstElementIdxs(beamSizes.size() + 1);
   cummulatedBeamSizes[0] = 0;

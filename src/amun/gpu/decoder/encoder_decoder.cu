@@ -136,6 +136,11 @@ BaseMatrix& EncoderDecoder::GetProbs() {
   return decoder_->GetProbs();
 }
 
+void *EncoderDecoder::GetTop()
+{
+  return &decoder_->GetTop();
+}
+
 mblas::Matrix& EncoderDecoder::GetAttention() {
   return decoder_->GetAttention();
 }

@@ -399,6 +399,10 @@ class Decoder {
       return Probs_;
     }
 
+    mblas::TMatrix<NthOut>& GetTop() {
+      return top_;
+    }
+
     void EmptyState(mblas::Matrix& State,
                     const mblas::Matrix& SourceContext,
                     size_t batchSize,
