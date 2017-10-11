@@ -683,6 +683,12 @@ void Fill(Matrix& In, float value) {
 
 }
 
+void Fill(TMatrix<NthOut> &In)
+{
+  size_t size = In.size();
+  HANDLE_ERROR(cudaMemsetAsync(In.data(), 0, size * sizeof(NthOut), CudaStreamHandler::GetStream()));
+}
+
 __global__
 void gMapMatrix(MatrixWrapper<float> in,
                 const MatrixWrapper<uint> sentencesMappingWrap,

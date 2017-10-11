@@ -92,6 +92,8 @@ void copy(const T *in, size_t count, T *out,  cudaMemcpyKind kind) {
 
 void Fill(Matrix& In, float value=0.0f);
 
+void Fill(TMatrix<NthOut>& In);
+
 Matrix& Swap(Matrix& Out, Matrix& In);
 
 void Mean(Matrix& Out, const Matrix& In, const IMatrix &sentencesMask);

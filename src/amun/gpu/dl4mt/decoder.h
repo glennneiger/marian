@@ -305,6 +305,7 @@ class Decoder {
           //BEGIN_TIMER("GetProbs.NewSize");
           Probs.NewSize(T1_.dim(0), w4->dim(1));
           top.NewSize(T1_.dim(0), 1, 1, 1);
+          Fill(top);
 
           //PAUSE_TIMER("GetProbs.NewSize");
 
