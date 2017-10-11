@@ -441,8 +441,8 @@ __global__ void gSoftMax(MatrixWrapper<float> out,
   int origSrcPos = threadIdx.x;
 
   while (hypoInd < numHypos) {
-    MatrixWrapper<float> _max(_share, shareSize);
-    _max[origSrcPos] = out(hypoInd, origSrcPos, 0, 0);
+    MatrixWrapper<float> maxWrap(_share, shareSize);
+    maxWrap[origSrcPos] = out(hypoInd, origSrcPos, 0, 0);
     for (int tid = 0; tid < srcLen; tid += blockDim.x) {
       int srcPos = tid + origSrcPos;
       if (srcPos < srcLen) {
@@ -450,8 +450,8 @@ __global__ void gSoftMax(MatrixWrapper<float> out,
 
         int batch = batchIdsWrap[hypoInd];
         value *= sentencesMappingWrap(srcPos, batch, 0, 0);
-        if (value > _max[origSrcPos]) {
-          _max[origSrcPos] = value;
+        if (value > maxWrap[origSrcPos]) {
+          maxWrap[origSrcPos] = value;
         }
       }
     }
@@ -462,13 +462,13 @@ __global__ void gSoftMax(MatrixWrapper<float> out,
 
       int skip = (len + 1) >> 1;
       if (origSrcPos < (len >> 1)) {
-        if(_max[origSrcPos + skip] > _max[origSrcPos])
-          _max[origSrcPos] = _max[origSrcPos + skip];
+        if(maxWrap[origSrcPos + skip] > maxWrap[origSrcPos])
+          maxWrap[origSrcPos] = maxWrap[origSrcPos + skip];
       }
       len = (len + 1) >> 1;
     }
     __syncthreads();
-    float max = _max[0];
+    float max = maxWrap[0];
     __syncthreads();
 
     //float* _sum = _share;// + blockDim.x;
@@ -540,16 +540,13 @@ __global__ void gLogSoftMax(MatrixWrapper<float> out, MatrixWrapper<NthOut> topW
   int rowIdx =  blockIdx.x;
 
   while (rowIdx < rows) {
-    //float* _max = _share;
-    MatrixWrapper<NthOut> _max(_shareNthOut, shareSize);
-
-    _max[threadIdx.x].score = out(rowIdx, threadIdx.x, 0, 0);
+    maxWrap[threadIdx.x].score = out(rowIdx, threadIdx.x, 0, 0);
     for (int tid = 0; tid < cols; tid += blockDim.x) {
       int id = tid + threadIdx.x;
       if (id < cols) {
         const float &val = out(rowIdx, id, 0, 0);
-        if (val > _max[threadIdx.x].score) {
-          _max[threadIdx.x] = NthOut((uint) id, val);
+        if (val > maxWrap[threadIdx.x].score) {
+          maxWrap[threadIdx.x] = NthOut((uint) id, val);
         }
       }
     }
@@ -560,14 +557,14 @@ __global__ void gLogSoftMax(MatrixWrapper<float> out, MatrixWrapper<NthOut> topW
 
       int skip = (len + 1) >> 1;
       if (threadIdx.x < (len >> 1)) {
-        if(_max[threadIdx.x + skip].score > _max[threadIdx.x].score)
-          _max[threadIdx.x] = _max[threadIdx.x + skip];
+        if(maxWrap[threadIdx.x + skip].score > maxWrap[threadIdx.x].score)
+          maxWrap[threadIdx.x] = maxWrap[threadIdx.x + skip];
       }
       len = (len + 1) >> 1;
     }
 
     __syncthreads();
-    NthOut max(_max[0].ind, _max[0].score);
+    NthOut max(maxWrap[0].ind, maxWrap[0].score);
     __syncthreads();
 
     topWrap[rowIdx] = max;
