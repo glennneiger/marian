@@ -532,7 +532,7 @@ Matrix& Softmax(Matrix& Out, const DeviceVector<uint>& batchIds, const mblas::IM
 
 __global__ void gFindMax(MatrixWrapper<NthOut> topWrap, const MatrixWrapper<float> out, uint shareSize)
 {
-  extern __shared__ float _share[];
+  extern __shared__ NthOut _shareNthOut[];
 
   size_t rows = out.dim(0);
   size_t cols = out.dim(1);
@@ -541,15 +541,15 @@ __global__ void gFindMax(MatrixWrapper<NthOut> topWrap, const MatrixWrapper<floa
 
   while (rowIdx < rows) {
     //float* _max = _share;
-    MatrixWrapper<float> _max(_share, shareSize);
+    MatrixWrapper<NthOut> _max(_shareNthOut, shareSize);
 
-    _max[threadIdx.x] = out(rowIdx, threadIdx.x, 0, 0);
+    _max[threadIdx.x] = NthOut(threadIdx.x, out(rowIdx, threadIdx.x, 0, 0));
     for (int tid = 0; tid < cols; tid += blockDim.x) {
       int id = tid + threadIdx.x;
       if (id < cols) {
         const float &val = out(rowIdx, id, 0, 0);
-        if (val > _max[threadIdx.x]) {
-          _max[threadIdx.x] = val;
+        if (val > _max[threadIdx.x].score) {
+          _max[threadIdx.x] = NthOut(id, val);
         }
       }
     }
@@ -560,13 +560,13 @@ __global__ void gFindMax(MatrixWrapper<NthOut> topWrap, const MatrixWrapper<floa
 
       int skip = (len + 1) >> 1;
       if (threadIdx.x < (len >> 1)) {
-        if(_max[threadIdx.x + skip] > _max[threadIdx.x])
+        if(_max[threadIdx.x + skip].score > _max[threadIdx.x].score)
           _max[threadIdx.x] = _max[threadIdx.x + skip];
       }
       len = (len + 1) >> 1;
     }
     __syncthreads();
-    topWrap[rowIdx].score = _max[0];
+    topWrap[rowIdx] = _max[0];
 
     __syncthreads();
     rowIdx += gridDim.x;
@@ -630,19 +630,21 @@ Matrix& LogSoftmax(TMatrix<NthOut> &top, Matrix& Out)
 
   int blocks = std::min(MAX_BLOCKS, (int)Out.dim(0));
   int threads = std::min(MAX_THREADS, (int)Out.dim(1));
-  int shared = sizeof(float) * threads;
+  int shared = sizeof(NthOut) * threads;
 
   cerr << "top=" << top.Debug(0) << endl;
   cerr << "Out=" << Out.Debug(0) << endl;
   cerr << "blocks=" << blocks << endl;
   cerr << "threads=" << threads << endl;
   cerr << "shared=" << shared << endl;
-  cerr << endl;
 
   BEGIN_TIMER("gFindMax");
   gFindMax<<<blocks, threads, shared, CudaStreamHandler::GetStream()>>>
     (topWrap, Out, threads);
   PAUSE_TIMER("gFindMax");
+
+  cerr << "top=" << top.Debug(2) << endl;
+  cerr << endl;
 
   BEGIN_TIMER("gLogSoftMax");
   gLogSoftMax<<<blocks, threads, shared, CudaStreamHandler::GetStream()>>>
