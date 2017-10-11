@@ -32,7 +32,7 @@ void NthElement::getNBestList(const std::vector<uint>& beamSizes, mblas::Matrix&
                   std::vector<float>& outCosts, std::vector<uint>& outKeys,
                   const bool isFirst) {
 
-  cerr << "top=" << top.Debug(2) << endl;
+  //cerr << "top=" << top.Debug(2) << endl;
   /*
   cerr << "beamSizes=" << beamSizes.size() << endl;
   cerr << Debug(beamSizes, 2) << endl;
@@ -74,8 +74,8 @@ void NthElement::getNBestList(const std::vector<uint>& beamSizes, mblas::Matrix&
   GetPairs(numHypos, outKeys, outCosts);
 
   //cerr << "outCosts=" << Debug(outCosts, 2) << endl;
-  cerr << "outKeys=" << Debug(outKeys, 2) << endl;
-  cerr << endl;
+  //cerr << "outKeys=" << Debug(outKeys, 2) << endl;
+  //cerr << endl;
 }
 
 void NthElement::getNBestList(mblas::Matrix &probs,
