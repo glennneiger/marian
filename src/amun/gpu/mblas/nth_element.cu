@@ -179,9 +179,7 @@ void NthElement::getValueByKey(std::vector<float>& out, const mblas::Matrix &d_i
   HANDLE_ERROR( cudaMemcpyAsync(out.data(), d_breakdown.data(), h_res.size() * sizeof(float),
                                 cudaMemcpyDeviceToHost, mblas::CudaStreamHandler::GetStream()) );
 
-  BEGIN_TIMER("cudaStreamSynchronize2");
   HANDLE_ERROR( cudaStreamSynchronize(mblas::CudaStreamHandler::GetStream()));
-  PAUSE_TIMER("cudaStreamSynchronize2");
 }
 
 }  // namespace GPU

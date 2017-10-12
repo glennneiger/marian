@@ -537,17 +537,21 @@ __global__ void gFindMax(MatrixWrapper<NthOut> topWrap, const MatrixWrapper<floa
   size_t rows = out.dim(0);
   size_t cols = out.dim(1);
 
-  int rowIdx =  blockIdx.x;
+  size_t rowIdx =  blockIdx.x;
 
   while (rowIdx < rows) {
     //float* _max = _share;
     MatrixWrapper<NthOut> _max(_shareNthOut, shareSize);
 
-    _max[threadIdx.x] = NthOut(threadIdx.x, out(rowIdx, threadIdx.x, 0, 0));
-    for (int tid = 0; tid < cols; tid += blockDim.x) {
-      int id = tid + threadIdx.x;
+    const float valOrig = out(rowIdx, threadIdx.x, 0, 0);
+    uint arrIndOrig = rowIdx * cols;
+    _max[threadIdx.x].ind = arrIndOrig;
+    _max[threadIdx.x].score = valOrig;
+
+    for (size_t tid = 0; tid < cols; tid += blockDim.x) {
+      size_t id = tid + threadIdx.x;
       if (id < cols) {
-        const float &val = out(rowIdx, id, 0, 0);
+        const float val = out(rowIdx, id, 0, 0);
         if (val > _max[threadIdx.x].score) {
           uint arrInd = rowIdx * cols + id;
           _max[threadIdx.x] = NthOut(arrInd, val);
@@ -555,17 +559,29 @@ __global__ void gFindMax(MatrixWrapper<NthOut> topWrap, const MatrixWrapper<floa
       }
     }
 
-    int len = blockDim.x;
+
+    size_t len = blockDim.x;
     while (len != 1) {
       __syncthreads();
 
-      int skip = (len + 1) >> 1;
+      size_t skip = (len + 1) >> 1;
       if (threadIdx.x < (len >> 1)) {
         if(_max[threadIdx.x + skip].score > _max[threadIdx.x].score)
           _max[threadIdx.x] = _max[threadIdx.x + skip];
       }
       len = (len + 1) >> 1;
     }
+
+    /*
+    if (threadIdx.x == 0) {
+      for (size_t i = 1; i < shareSize; ++i) {
+        if (_max[0].score < _max[i].score) {
+          _max[0] = _max[i];
+        }
+      }
+    }
+    */
+
     __syncthreads();
     topWrap[rowIdx] = _max[0];
 
@@ -644,6 +660,7 @@ Matrix& LogSoftmax(TMatrix<NthOut> &top, Matrix& Out)
     (topWrap, Out, threads);
   PAUSE_TIMER("gFindMax");
 
+  HANDLE_ERROR( cudaStreamSynchronize(mblas::CudaStreamHandler::GetStream()));
   cerr << "top=" << top.Debug(2) << endl;
   cerr << endl;
 
