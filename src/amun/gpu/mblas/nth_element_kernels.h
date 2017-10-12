@@ -39,6 +39,29 @@ struct NthOut
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
+struct NthOutBatch : public NthOut
+{
+  uint batch;
+
+  __device__ __host__
+  NthOutBatch(uint vInd, float vScore, uint vBatch)
+  :NthOut(vInd, vScore)
+  ,batch(vBatch)
+  {}
+
+  __device__ __host__
+  NthOutBatch& operator+=(const NthOutBatch& rhs)
+  {
+    ind += rhs.ind;
+    score += rhs.score;
+    batch += rhs.batch;
+    return *this;
+  }
+
+};
+
+/////////////////////////////////////////////////////////////////////////////////////////
+
 inline std::ostream& operator<<(std::ostream &out, const NthOut &obj)
 {
   out << "(" << obj.ind << "," << obj.score << ")";
