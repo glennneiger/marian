@@ -47,6 +47,9 @@ class NthElement {
                       const HostVector<uint>& batchFirstElementIdxs,
                       const HostVector<uint>& cummulatedBeamSizes);
 
+    void GetPairs(const mblas::TMatrix<NthOutBatch> &top,
+                  std::vector<uint>& outKeys,
+                  std::vector<float>& outValues);
 };
 
 }  // namespace GPU

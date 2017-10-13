@@ -30,8 +30,9 @@ NthElement::~NthElement()
 
 void NthElement::getNBestList(const std::vector<uint>& beamSizes, mblas::Matrix& Probs, mblas::TMatrix<NthOutBatch> &top,
                   std::vector<float>& outCosts, std::vector<uint>& outKeys,
-                  const bool isFirst) {
-
+                  const bool isFirst)
+{
+  /*
   //cerr << "top=" << top.Debug(2) << endl;
   HostVector<uint> cummulatedBeamSizes(beamSizes.size() + 1);
   HostVector<uint> batchFirstElementIdxs(beamSizes.size() + 1);
@@ -62,11 +63,13 @@ void NthElement::getNBestList(const std::vector<uint>& beamSizes, mblas::Matrix&
   //cerr << "cummulatedBeamSizes.back()=" << cummulatedBeamSizes.back() << endl;
   //cerr << "cummulatedBeamSizes=" << Debug(cummulatedBeamSizes, 2) << endl;
   GetPairs(numHypos, outKeys, outCosts);
+  */
+  GetPairs(top, outKeys, outCosts);
 
-  cerr << "outCosts=" << Debug(outCosts, 2) << endl;
-  cerr << "outKeys=" << Debug(outKeys, 2) << endl;
-  cerr << "top=" << top.Debug(2) << endl;
-  cerr << endl;
+  //cerr << "outCosts=" << Debug(outCosts, 2) << endl;
+  //cerr << "outKeys=" << Debug(outKeys, 2) << endl;
+  //cerr << "top=" << top.Debug(2) << endl;
+  //cerr << endl;
 }
 
 void NthElement::getNBestList(mblas::Matrix &probs,
@@ -171,6 +174,22 @@ void NthElement::getValueByKey(std::vector<float>& out, const mblas::Matrix &d_i
                                 cudaMemcpyDeviceToHost, mblas::CudaStreamHandler::GetStream()) );
 
   HANDLE_ERROR( cudaStreamSynchronize(mblas::CudaStreamHandler::GetStream()));
+}
+
+void NthElement::GetPairs(const mblas::TMatrix<NthOutBatch> &top,
+              std::vector<uint>& outKeys,
+              std::vector<float>& outValues)
+{
+  outKeys.resize(top.size());
+  outValues.resize(top.size());
+
+  HostVector<NthOutBatch> hostVec(top.size());
+  mblas::copy(top.data(), top.size(), thrust::raw_pointer_cast(hostVec.data()), cudaMemcpyDeviceToHost);
+
+  for (size_t i = 0; i < top.size(); ++i) {
+    outKeys[i] = hostVec[i].ind;
+    outValues[i] = hostVec[i].score;
+  }
 }
 
 }  // namespace GPU
