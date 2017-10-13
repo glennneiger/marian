@@ -636,7 +636,17 @@ __global__ void gLogSoftMax(MatrixWrapper<NthOutBatch> topWrap, MatrixWrapper<fl
     }
 
     // apply partition and log to top
+    if (threadIdx.x == 0) {
+      NthOutBatch &ele = topWrap[rowIdx];
+      assert(ele.batch == rowIdx);
 
+      float &val = ele.score;
+      val = __expf(val - topWrap[rowIdx].score);
+      val = __logf(val /_sum[0]);
+
+      //__syncthreads();
+      //printf("val=%f %f \n", out(rowIdx, ele.vocabId, 0, 0), val);
+    }
 
     __syncthreads();
     rowIdx += gridDim.x;
