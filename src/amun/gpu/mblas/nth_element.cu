@@ -28,7 +28,7 @@ NthElement::~NthElement()
   //cerr << "FOO2" << endl;
 }
 
-void NthElement::getNBestList(const std::vector<uint>& beamSizes, mblas::Matrix& Probs, mblas::TMatrix<NthOut> &top,
+void NthElement::getNBestList(const std::vector<uint>& beamSizes, mblas::Matrix& Probs, mblas::TMatrix<NthOutBatch> &top,
                   std::vector<float>& outCosts, std::vector<uint>& outKeys,
                   const bool isFirst) {
 
@@ -73,7 +73,7 @@ void NthElement::getNBestList(const std::vector<uint>& beamSizes, mblas::Matrix&
   //cerr << "cummulatedBeamSizes=" << Debug(cummulatedBeamSizes, 2) << endl;
   GetPairs(numHypos, outKeys, outCosts);
 
-  //cerr << "outCosts=" << Debug(outCosts, 2) << endl;
+  cerr << "outCosts=" << Debug(outCosts, 2) << endl;
   cerr << "outKeys=" << Debug(outKeys, 2) << endl;
   cerr << endl;
 }

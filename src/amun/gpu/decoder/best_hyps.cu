@@ -19,7 +19,7 @@ void BestHyps::DisAllowUNK(mblas::Matrix& Prob) {
   SetColumn(Prob, UNK_ID, std::numeric_limits<float>::lowest());
 }
 
-void BestHyps::FindBests(const std::vector<uint>& beamSizes, mblas::Matrix& Probs, mblas::TMatrix<NthOut> &top,
+void BestHyps::FindBests(const std::vector<uint>& beamSizes, mblas::Matrix& Probs, mblas::TMatrix<NthOutBatch> &top,
                std::vector<float>& outCosts,
                std::vector<unsigned>& outKeys,
                const bool isFirst)
@@ -64,7 +64,7 @@ void  BestHyps::CalcBeam(
   using namespace mblas;
 
   mblas::Matrix& Probs = static_cast<mblas::Matrix&>(scorers[0]->GetProbs());
-  mblas::TMatrix<NthOut> &top = *static_cast<mblas::TMatrix<NthOut>*>(scorers[0]->GetTop());
+  mblas::TMatrix<NthOutBatch> &top = *static_cast<mblas::TMatrix<NthOutBatch>*>(scorers[0]->GetTop());
   //std::cerr << "4Probs=" << Probs.Debug(1) << std::endl;
 
   HostVector<float> vCosts;

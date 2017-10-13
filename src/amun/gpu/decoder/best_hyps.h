@@ -24,7 +24,7 @@ class BestHyps : public BestHypsBase
 
     void DisAllowUNK(mblas::Matrix& Prob);
 
-    void FindBests(const std::vector<uint>& beamSizes, mblas::Matrix& Probs, mblas::TMatrix<NthOut> &top,
+    void FindBests(const std::vector<uint>& beamSizes, mblas::Matrix& Probs, mblas::TMatrix<NthOutBatch> &top,
                    std::vector<float>& outCosts,
                    std::vector<unsigned>& outKeys,
                    const bool isFirst);

@@ -246,7 +246,7 @@ class Decoder {
           mblas::Transpose(TempB4, *w_.B4_);
         }
 
-        void GetProbs(mblas::TMatrix<NthOut>& top,
+        void GetProbs(mblas::TMatrix<NthOutBatch>& top,
                   mblas::Matrix& Probs,
                   const mblas::Matrix& State,
                   const mblas::Matrix& Embedding,
@@ -400,7 +400,7 @@ class Decoder {
       return Probs_;
     }
 
-    mblas::TMatrix<NthOut>& GetTop() {
+    mblas::TMatrix<NthOutBatch>& GetTop() {
       return top_;
     }
 
@@ -473,7 +473,7 @@ class Decoder {
     mblas::Matrix HiddenState_;
     mblas::Matrix AlignedSourceContext_;
     mblas::Matrix Probs_;
-    mblas::TMatrix<NthOut> top_;
+    mblas::TMatrix<NthOutBatch> top_;
 
     Embeddings<Weights::DecEmbeddings> embeddings_;
     RNNHidden<Weights::DecInit, Weights::DecGRU1> rnn1_;

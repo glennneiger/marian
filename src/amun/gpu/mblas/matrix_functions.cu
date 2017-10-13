@@ -530,9 +530,9 @@ Matrix& Softmax(Matrix& Out, const DeviceVector<uint>& batchIds, const mblas::IM
   return Out;
 }
 
-__global__ void gFindMax(MatrixWrapper<NthOut> topWrap, const MatrixWrapper<float> out, uint shareSize)
+__global__ void gFindMax(MatrixWrapper<NthOutBatch> topWrap, const MatrixWrapper<float> out, uint shareSize)
 {
-  extern __shared__ NthOut _shareNthOut[];
+  extern __shared__ NthOutBatch _shareNthOut[];
 
   size_t rows = out.dim(0);
   size_t cols = out.dim(1);
@@ -541,12 +541,11 @@ __global__ void gFindMax(MatrixWrapper<NthOut> topWrap, const MatrixWrapper<floa
 
   while (rowIdx < rows) {
     //float* _max = _share;
-    MatrixWrapper<NthOut> _max(_shareNthOut, shareSize);
+    MatrixWrapper<NthOutBatch> _max(_shareNthOut, shareSize);
 
     const float valOrig = out(rowIdx, threadIdx.x, 0, 0);
     uint arrIndOrig = rowIdx * cols;
-    _max[threadIdx.x].ind = arrIndOrig;
-    _max[threadIdx.x].score = valOrig;
+    _max[threadIdx.x] = NthOutBatch(arrIndOrig, valOrig, rowIdx);
 
     for (size_t tid = 0; tid < cols; tid += blockDim.x) {
       size_t id = tid + threadIdx.x;
@@ -554,7 +553,7 @@ __global__ void gFindMax(MatrixWrapper<NthOut> topWrap, const MatrixWrapper<floa
         const float val = out(rowIdx, id, 0, 0);
         if (val > _max[threadIdx.x].score) {
           uint arrInd = rowIdx * cols + id;
-          _max[threadIdx.x] = NthOut(arrInd, val);
+          _max[threadIdx.x] = NthOutBatch(arrInd, val, rowIdx);
         }
       }
     }
@@ -590,7 +589,7 @@ __global__ void gFindMax(MatrixWrapper<NthOut> topWrap, const MatrixWrapper<floa
   }
 }
 
-__global__ void gLogSoftMax(const MatrixWrapper<NthOut> topWrap, MatrixWrapper<float> out, uint shareSize)
+__global__ void gLogSoftMax(const MatrixWrapper<NthOutBatch> topWrap, MatrixWrapper<float> out, uint shareSize)
 {
   extern __shared__ float _share[];
 
@@ -640,14 +639,14 @@ __global__ void gLogSoftMax(const MatrixWrapper<NthOut> topWrap, MatrixWrapper<f
   }
 }
 
-Matrix& LogSoftmax(TMatrix<NthOut> &top, Matrix& Out)
+Matrix& LogSoftmax(TMatrix<NthOutBatch> &top, Matrix& Out)
 {
-  MatrixWrapper<NthOut> topWrap(top);
+  MatrixWrapper<NthOutBatch> topWrap(top);
   MatrixWrapper<float> outWrap(Out);
 
   int blocks = std::min(MAX_BLOCKS, (int)Out.dim(0));
   int threads = std::min(MAX_THREADS, (int)Out.dim(1));
-  int shared = sizeof(NthOut) * threads;
+  int shared = sizeof(NthOutBatch) * threads;
 
   cerr << "top=" << top.Debug(0) << endl;
   cerr << "Out=" << Out.Debug(0) << endl;
@@ -719,10 +718,10 @@ void Fill(Matrix& In, float value) {
 
 }
 
-void Fill(TMatrix<NthOut> &In)
+void Fill(TMatrix<NthOutBatch> &In)
 {
   size_t size = In.size();
-  HANDLE_ERROR(cudaMemsetAsync(In.data(), 0, size * sizeof(NthOut), CudaStreamHandler::GetStream()));
+  HANDLE_ERROR(cudaMemsetAsync(In.data(), 0, size * sizeof(NthOutBatch), CudaStreamHandler::GetStream()));
 }
 
 __global__

@@ -92,7 +92,7 @@ void copy(const T *in, size_t count, T *out,  cudaMemcpyKind kind) {
 
 void Fill(Matrix& In, float value=0.0f);
 
-void Fill(TMatrix<NthOut>& In);
+void Fill(TMatrix<NthOutBatch>& In);
 
 Matrix& Swap(Matrix& Out, Matrix& In);
 
@@ -140,7 +140,7 @@ Matrix& Prod(Matrix& C, const Matrix& A, const Matrix& B,
 
 Matrix& Softmax(Matrix& Out, const DeviceVector<uint>& batchIds, const mblas::IMatrix &sentencesMask, size_t batchSize);
 
-Matrix& LogSoftmax(TMatrix<NthOut> &top, Matrix& Out);
+Matrix& LogSoftmax(TMatrix<NthOutBatch> &top, Matrix& Out);
 
 template <class Functor>
 __global__ void gBroadcast(Functor functor,
@@ -250,14 +250,14 @@ __global__ void gBroadcastVecColumn(Functor functor,
 
 template <class Functor>
 __global__ void gBroadcastVecColumn(Functor functor,
-                                    MatrixWrapper<NthOut> topWrap,
+                                    MatrixWrapper<NthOutBatch> topWrap,
                                     const MatrixWrapper<float> inWrap)
 {
 
 }
 
 template <class Functor>
-Matrix& BroadcastVecColumn(Functor functor, Matrix& Out, mblas::TMatrix<NthOut> &top, const DeviceVector<float>& In)
+Matrix& BroadcastVecColumn(Functor functor, Matrix& Out, mblas::TMatrix<NthOutBatch> &top, const DeviceVector<float>& In)
 {
   size_t rows  = Out.dim(0);
   size_t cols = Out.dim(1);
@@ -271,9 +271,9 @@ Matrix& BroadcastVecColumn(Functor functor, Matrix& Out, mblas::TMatrix<NthOut> 
   gBroadcastVecColumn<<<blocks, threads, rows * sizeof(float), CudaStreamHandler::GetStream()>>>
     (functor, outWrap, inWrap);
 
-  MatrixWrapper<NthOut> topWrap(top);
+  MatrixWrapper<NthOutBatch> topWrap(top);
 
-  gBroadcastVecColumn<<<blocks, threads, rows * sizeof(NthOut), CudaStreamHandler::GetStream()>>>
+  gBroadcastVecColumn<<<blocks, threads, rows * sizeof(NthOutBatch), CudaStreamHandler::GetStream()>>>
     (functor, topWrap, inWrap);
 
   return Out;
