@@ -40,8 +40,10 @@ struct NthOut
 
 /////////////////////////////////////////////////////////////////////////////////////////
 
-struct NthOutBatch : public NthOut
+struct NthOutBatch
 {
+  uint ind;
+  float score;
   uint batch;
   uint vocabId;
 
@@ -50,7 +52,8 @@ struct NthOutBatch : public NthOut
 
   __device__ __host__
   NthOutBatch(uint vInd, float vScore, uint vBatch, uint vVocabId)
-  :NthOut(vInd, vScore)
+  :ind(vInd)
+  ,score(vScore)
   ,batch(vBatch)
   ,vocabId(vVocabId)
   {}

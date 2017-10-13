@@ -534,54 +534,73 @@ __global__ void gFindMax(MatrixWrapper<NthOutBatch> topWrap, const MatrixWrapper
 {
   extern __shared__ NthOutBatch _shareNthOut[];
 
-  size_t rows = out.dim(0);
-  size_t cols = out.dim(1);
+  uint rows = out.dim(0);
+  uint cols = out.dim(1);
 
-  size_t rowIdx =  blockIdx.x;
+  uint rowIdx =  blockIdx.x;
 
   while (rowIdx < rows) {
     //float* _max = _share;
     MatrixWrapper<NthOutBatch> _max(_shareNthOut, shareSize);
 
     const float valOrig = out(rowIdx, threadIdx.x, 0, 0);
-    uint arrIndOrig = rowIdx * cols;
+    uint arrIndOrig = rowIdx * cols + threadIdx.x;
     _max[threadIdx.x] = NthOutBatch(arrIndOrig, valOrig, rowIdx, threadIdx.x);
 
-    for (size_t tid = 0; tid < cols; tid += blockDim.x) {
-      size_t id = tid + threadIdx.x;
-      if (id < cols) {
-        const float val = out(rowIdx, id, 0, 0);
-        if (val > _max[threadIdx.x].score) {
-          size_t arrInd = rowIdx * cols + id;
-          _max[threadIdx.x] = NthOutBatch(arrInd, val, rowIdx, id);
-        }
-      }
-    }
-
-    /*
-    size_t len = blockDim.x;
-    while (len != 1) {
-      __syncthreads();
-
-      size_t skip = (len + 1) >> 1;
-      if (threadIdx.x < (len >> 1)) {
-        if(_max[threadIdx.x + skip].score > _max[threadIdx.x].score)
-          _max[threadIdx.x] = _max[threadIdx.x + skip];
-      }
-      len = (len + 1) >> 1;
-    }
-    */
-
-    if (threadIdx.x == 0) {
-      for (size_t i = 1; i < shareSize; ++i) {
-        if (_max[0].score < _max[i].score) {
-          _max[0] = _max[i];
-        }
+    for (uint id = threadIdx.x + 1; id < cols; id += blockDim.x) {
+      const float val = out(rowIdx, id, 0, 0);
+      if (val > _max[threadIdx.x].score) {
+        uint arrInd = rowIdx * cols + id;
+        _max[threadIdx.x] = NthOutBatch(arrInd, val, rowIdx, id);
+        /*
+        printf("arrInd=%d ind=%d vocabId=%d \n",
+              arrInd,
+              _max[threadIdx.x].ind,
+              _max[threadIdx.x].vocabId);
+        */
       }
     }
 
     __syncthreads();
-    topWrap[rowIdx] = _max[0];
+
+    uint len = blockDim.x;
+    while (len != 1) {
+      __syncthreads();
+
+      uint skip = (len + 1) >> 1;
+      if (threadIdx.x < (len >> 1)) {
+        if(_max[threadIdx.x + skip].score > _max[threadIdx.x].score) {
+          _max[threadIdx.x] = _max[threadIdx.x + skip];
+        }
+      }
+      len = (len + 1) >> 1;
+    }
+
+    /*
+    if (threadIdx.x == 0) {
+      for (uint i = 1; i < shareSize; ++i) {
+        if (_max[0].score < _max[i].score) {
+          _max[0] = _max[i];
+          printf("ind=%d %d vocab=%d %d \n",
+                _max[0].ind,
+                _max[i].ind,
+                _max[0].vocabId,
+                _max[i].vocabId);
+        }
+      }
+    }
+    */
+    __syncthreads();
+    if (threadIdx.x == 0) {
+      topWrap[rowIdx] = _max[0];
+      /*
+      printf("ind=%d %d vocab=%d %d \n",
+          topWrap[rowIdx].ind,
+            _max[0].ind,
+            topWrap[rowIdx].vocabId,
+            _max[0].vocabId);
+      */
+    }
 
     __syncthreads();
     rowIdx += gridDim.x;
