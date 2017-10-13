@@ -675,8 +675,8 @@ Matrix& LogSoftmax(TMatrix<NthOutBatch> &top, Matrix& Out)
   PAUSE_TIMER("gFindMax");
 
   HANDLE_ERROR( cudaStreamSynchronize(mblas::CudaStreamHandler::GetStream()));
-  cerr << "top=" << top.Debug(2) << endl;
-  cerr << endl;
+  //cerr << "top=" << top.Debug(2) << endl;
+  //cerr << endl;
 
   BEGIN_TIMER("gLogSoftMax");
   gLogSoftMax<<<blocks, threads, shared, CudaStreamHandler::GetStream()>>>
