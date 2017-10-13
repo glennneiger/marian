@@ -14,15 +14,6 @@ struct NthOut
   NthOut() {}
 
   __device__ __host__
-  NthOut(uint init)
-  :ind(init)
-  ,score(init)
-  {
-    // only to be used to init variable in matrix.h gSum
-    assert(init == 0);
-  }
-
-  __device__ __host__
   NthOut(uint vInd, float vScore)
   :ind(vInd)
   ,score(vScore)
@@ -35,6 +26,16 @@ struct NthOut
     score += rhs.score;
     return *this;
   }
+
+  __device__ __host__
+  float& operator=(const float& rhs)
+  {
+    // only to be used to init variable in matrix.h gSum
+    assert(rhs == 0.0f);
+    score = rhs;
+    return score;
+  }
+
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////
@@ -46,12 +47,6 @@ struct NthOutBatch : public NthOut
 
   __device__ __host__
   NthOutBatch() {}
-
-  __device__ __host__
-  NthOutBatch(uint init)
-  :NthOut(init)
-  {
-  }
 
   __device__ __host__
   NthOutBatch(uint vInd, float vScore, uint vBatch, uint vVocabId)
@@ -70,6 +65,14 @@ struct NthOutBatch : public NthOut
     return *this;
   }
 
+  __device__ __host__
+  float& operator=(const float& rhs)
+  {
+    // only to be used to init variable in matrix.h gSum
+    assert(rhs == 0.0f);
+    score = rhs;
+    return score;
+  }
 };
 
 /////////////////////////////////////////////////////////////////////////////////////////

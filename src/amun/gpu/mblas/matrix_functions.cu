@@ -552,13 +552,13 @@ __global__ void gFindMax(MatrixWrapper<NthOutBatch> topWrap, const MatrixWrapper
       if (id < cols) {
         const float val = out(rowIdx, id, 0, 0);
         if (val > _max[threadIdx.x].score) {
-          uint arrInd = rowIdx * cols + id;
+          size_t arrInd = rowIdx * cols + id;
           _max[threadIdx.x] = NthOutBatch(arrInd, val, rowIdx, id);
         }
       }
     }
 
-
+    /*
     size_t len = blockDim.x;
     while (len != 1) {
       __syncthreads();
@@ -570,8 +570,8 @@ __global__ void gFindMax(MatrixWrapper<NthOutBatch> topWrap, const MatrixWrapper
       }
       len = (len + 1) >> 1;
     }
+    */
 
-    /*
     if (threadIdx.x == 0) {
       for (size_t i = 1; i < shareSize; ++i) {
         if (_max[0].score < _max[i].score) {
@@ -579,7 +579,6 @@ __global__ void gFindMax(MatrixWrapper<NthOutBatch> topWrap, const MatrixWrapper
         }
       }
     }
-    */
 
     __syncthreads();
     topWrap[rowIdx] = _max[0];
