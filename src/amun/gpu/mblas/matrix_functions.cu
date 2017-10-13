@@ -666,20 +666,21 @@ Matrix& LogSoftmax(TMatrix<NthOutBatch> &top, Matrix& Out)
   int threads = std::min(MAX_THREADS, (int)Out.dim(1));
   int shared = sizeof(NthOutBatch) * threads;
 
+  /*
   cerr << "top=" << top.Debug(0) << endl;
   cerr << "Out=" << Out.Debug(0) << endl;
   cerr << "blocks=" << blocks << endl;
   cerr << "threads=" << threads << endl;
   cerr << "shared=" << shared << endl;
-
+  */
   BEGIN_TIMER("gFindMax");
   gFindMax<<<blocks, threads, shared, CudaStreamHandler::GetStream()>>>
     (topWrap, Out, threads);
   PAUSE_TIMER("gFindMax");
 
   HANDLE_ERROR( cudaStreamSynchronize(mblas::CudaStreamHandler::GetStream()));
-  cerr << "top=" << top.Debug(2) << endl;
-  cerr << endl;
+  //cerr << "top=" << top.Debug(2) << endl;
+  //cerr << endl;
 
   BEGIN_TIMER("gLogSoftMax");
   gLogSoftMax<<<blocks, threads, shared, CudaStreamHandler::GetStream()>>>
