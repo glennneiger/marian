@@ -73,7 +73,7 @@ void NthElement::getNBestList(const std::vector<uint>& beamSizes, mblas::Matrix&
   //cerr << "cummulatedBeamSizes=" << Debug(cummulatedBeamSizes, 2) << endl;
   GetPairs(numHypos, outKeys, outCosts);
 
-  cerr << "outCosts=" << Debug(outCosts, 2) << endl;
+  //cerr << "outCosts=" << Debug(outCosts, 2) << endl;
   cerr << "outKeys=" << Debug(outKeys, 2) << endl;
   cerr << endl;
 }

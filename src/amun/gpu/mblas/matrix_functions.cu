@@ -545,7 +545,7 @@ __global__ void gFindMax(MatrixWrapper<NthOutBatch> topWrap, const MatrixWrapper
 
     const float valOrig = out(rowIdx, threadIdx.x, 0, 0);
     uint arrIndOrig = rowIdx * cols;
-    _max[threadIdx.x] = NthOutBatch(arrIndOrig, valOrig, rowIdx);
+    _max[threadIdx.x] = NthOutBatch(arrIndOrig, valOrig, rowIdx, threadIdx.x);
 
     for (size_t tid = 0; tid < cols; tid += blockDim.x) {
       size_t id = tid + threadIdx.x;
@@ -553,7 +553,7 @@ __global__ void gFindMax(MatrixWrapper<NthOutBatch> topWrap, const MatrixWrapper
         const float val = out(rowIdx, id, 0, 0);
         if (val > _max[threadIdx.x].score) {
           uint arrInd = rowIdx * cols + id;
-          _max[threadIdx.x] = NthOutBatch(arrInd, val, rowIdx);
+          _max[threadIdx.x] = NthOutBatch(arrInd, val, rowIdx, id);
         }
       }
     }
