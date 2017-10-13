@@ -629,11 +629,13 @@ __global__ void gLogSoftMax(MatrixWrapper<NthOutBatch> topWrap, MatrixWrapper<fl
     __syncthreads();
 
     // apply partition and log
+    /*
     for (int id = threadIdx.x; id < cols; id += blockDim.x) {
       //row[id] = log(row[id]/_sum[0]);
       float &val = out(rowIdx, id, 0, 0);
       val = __logf(val /_sum[0]);
     }
+    */
 
     // apply partition and log to top
     if (threadIdx.x == 0) {

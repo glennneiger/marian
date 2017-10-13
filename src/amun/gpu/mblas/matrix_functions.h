@@ -277,20 +277,21 @@ Matrix& BroadcastVecColumn(Functor functor, Matrix& Out, mblas::TMatrix<NthOutBa
   */
   MatrixWrapper<float> outWrap(Out);
   const MatrixWrapper<float> inWrap(In);
+  /*
 
   int threads = std::min(MAX_THREADS, (int)cols);
   int blocks  = cols / threads  + ((cols % threads == 0) ?  0 : 1);
 
   gBroadcastVecColumn<<<blocks, threads, rows * sizeof(float), CudaStreamHandler::GetStream()>>>
     (functor, outWrap, inWrap);
-
+  */
   // top
-  threads = std::min(MAX_THREADS, (int)top.size());
-  blocks  = top.size() / threads  + ((top.size() % threads == 0) ?  0 : 1);
+  int threads2 = std::min(MAX_THREADS, (int)top.size());
+  int blocks2  = top.size() / threads2  + ((top.size() % threads2 == 0) ?  0 : 1);
 
   MatrixWrapper<NthOutBatch> topWrap(top);
 
-  gBroadcastVecColumn<<<blocks, threads, rows * sizeof(NthOutBatch), CudaStreamHandler::GetStream()>>>
+  gBroadcastVecColumn<<<blocks2, threads2, rows * sizeof(NthOutBatch), CudaStreamHandler::GetStream()>>>
     (functor, topWrap, inWrap, outWrap);
 
   return Out;
