@@ -638,7 +638,7 @@ __global__ void gLogSoftMax(MatrixWrapper<NthOutBatch> topWrap, MatrixWrapper<fl
     // apply partition and log to top
     if (threadIdx.x == 0) {
       NthOutBatch &ele = topWrap[rowIdx];
-      assert(ele.batch == rowIdx);
+      assert(ele.hypoInd == rowIdx);
 
       float &val = ele.score;
       val = __expf(val - topWrap[rowIdx].score);

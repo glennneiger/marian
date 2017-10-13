@@ -44,18 +44,18 @@ struct NthOutBatch
 {
   uint ind;
   float score;
-  uint batch;
-  uint vocabId;
+  uint hypoInd;
+  uint vocabInd;
 
   __device__ __host__
   NthOutBatch() {}
 
   __device__ __host__
-  NthOutBatch(uint vInd, float vScore, uint vBatch, uint vVocabId)
+  NthOutBatch(uint vInd, float vScore, uint vHypoInd, uint vVocabInd)
   :ind(vInd)
   ,score(vScore)
-  ,batch(vBatch)
-  ,vocabId(vVocabId)
+  ,hypoInd(vHypoInd)
+  ,vocabInd(vVocabInd)
   {}
 
   __device__ __host__
@@ -63,8 +63,8 @@ struct NthOutBatch
   {
     ind += rhs.ind;
     score += rhs.score;
-    batch += rhs.batch;
-    vocabId += rhs.vocabId;
+    hypoInd += rhs.hypoInd;
+    vocabInd += rhs.vocabInd;
     return *this;
   }
 
@@ -91,8 +91,8 @@ inline std::ostream& operator<<(std::ostream &out, const NthOutBatch &obj)
   out << "("
       << obj.ind << ","
       << obj.score << ","
-      << obj.batch << ","
-      << obj.vocabId << ")";
+      << obj.hypoInd << ","
+      << obj.vocabInd << ")";
   return out;
 }
 

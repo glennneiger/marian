@@ -81,9 +81,9 @@ void  BestHyps::CalcBeam(
 
   const bool isFirst = (vCosts[0] == 0.0f) ? true : false;
 
-  std::cerr << "1Probs=" << Probs.Debug(0) << std::endl;
-  std::cerr << "1top=" << top.Debug(0) << std::endl;
-  std::cerr << std::endl;
+  //std::cerr << "1Probs=" << Probs.Debug(0) << std::endl;
+  //std::cerr << "1top=" << top.Debug(0) << std::endl;
+  //std::cerr << std::endl;
 
   BEGIN_TIMER("CalcBeam.BroadcastVecColumn");
   BroadcastVecColumn(weights_.at(scorers[0]->GetName()) * _1 + _2, Probs, top, Costs);
