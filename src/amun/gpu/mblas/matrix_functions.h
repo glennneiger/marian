@@ -251,9 +251,17 @@ __global__ void gBroadcastVecColumn(Functor functor,
 template <class Functor>
 __global__ void gBroadcastVecColumn(Functor functor,
                                     MatrixWrapper<NthOutBatch> topWrap,
-                                    const MatrixWrapper<float> inWrap)
+                                    const MatrixWrapper<float> inWrap,
+                                    MatrixWrapper<float> outWrap)
 {
+  int hypoId = threadIdx.x + blockDim.x * blockIdx.x;
+  if (hypoId < topWrap.size()) {
+    NthOutBatch &ele = topWrap[hypoId];
+    float &val = ele.score;
+    val = functor(val, inWrap[hypoId]);
 
+    //printf("val=%f %f \n", val, outWrap(hypoId, ele.vocabId, 0, 0));
+  }
 }
 
 template <class Functor>
@@ -262,6 +270,11 @@ Matrix& BroadcastVecColumn(Functor functor, Matrix& Out, mblas::TMatrix<NthOutBa
   size_t rows  = Out.dim(0);
   size_t cols = Out.dim(1);
 
+  /*
+  std::cerr << "Out=" << Out.Debug(0) << std::endl;
+  std::cerr << "top=" << top.Debug(2) << std::endl;
+  std::cerr << "In=" << Debug(In, 0) << std::endl;
+  */
   MatrixWrapper<float> outWrap(Out);
   const MatrixWrapper<float> inWrap(In);
 
@@ -271,10 +284,14 @@ Matrix& BroadcastVecColumn(Functor functor, Matrix& Out, mblas::TMatrix<NthOutBa
   gBroadcastVecColumn<<<blocks, threads, rows * sizeof(float), CudaStreamHandler::GetStream()>>>
     (functor, outWrap, inWrap);
 
+  // top
+  threads = std::min(MAX_THREADS, (int)top.size());
+  blocks  = top.size() / threads  + ((top.size() % threads == 0) ?  0 : 1);
+
   MatrixWrapper<NthOutBatch> topWrap(top);
 
   gBroadcastVecColumn<<<blocks, threads, rows * sizeof(NthOutBatch), CudaStreamHandler::GetStream()>>>
-    (functor, topWrap, inWrap);
+    (functor, topWrap, inWrap, outWrap);
 
   return Out;
 }
